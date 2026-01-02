@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GAMER SCREENSHOT - AI Translator</title>
+    <script src="https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a0c; color: #fff; display: flex; flex-direction: column; height: 100vh; }
+        
+        header { 
+            background: #15151b; 
+            padding: 20px; 
+            text-align: center; 
+            border-bottom: 2px solid #3498db;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        h1 { 
+            margin: 0; 
+            font-family: 'Orbitron', sans-serif; 
+            font-size: 18px; 
+            color: #3498db; 
+            text-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+            letter-spacing: 1px;
+        }
+
+        #camera-view { 
+            position: relative; 
+            flex: 1; 
+            background: #000; 
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, #3498db, transparent);
+            box-shadow: 0 0 15px #3498db;
+            top: 0;
+            animation: scanning 3s infinite linear;
+            z-index: 2;
+        }
+
+        @keyframes scanning {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        #output-panel { 
+            padding: 20px; 
+            background: #15151b; 
+            border-top: 2px solid #222;
+            border-radius: 25px 25px 0 0;
+            z-index: 5;
+        }
+
+        button { 
+            background: linear-gradient(90deg, #3498db, #2980b9); 
+            color: white; 
+            border: none; 
+            padding: 18px; 
+            border-radius: 15px; 
+            font-size: 18px; 
+            font-weight: bold; 
+            width: 100%; 
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: 0.2s;
+        }
+
+        button:active { transform: scale(0.98); opacity: 0.9; }
+
+        #result { 
+            margin-top: 15px; 
+            background: #0a0a0c; 
+            padding: 15px; 
+            border-radius: 12px; 
+            font-size: 15px; 
+            line-height: 1.6; 
+            min-height: 80px; 
+            max-height: 150px;
+            overflow-y: auto;
+            border-right: 4px solid #3498db;
+        }
+
+        .ability-title { color: #f1c40f; font-weight: bold; font-size: 17px; margin-bottom: 5px; }
+        .description { color: #ccc; }
+        .keyword { color: #2ecc71; font-weight: bold; }
+        .status-msg { color: #3498db; font-style: italic; text-align: center; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>GAMER SCREENSHOT</h1>
+</header>
+
+<div id="camera-view">
+    <video id="video" autoplay playsinline></video>
+    <div class="scan-line"></div>
+</div>
+
+<div id="output-panel">
+    <button id="snap-btn">סרוק יכולת (SCAN)</button>
+    <div id="result">
+        <p class="status-msg">כוון את המצלמה לטקסט ולחץ על הכפתור</p>
+    </div>
+</div>
+
+<canvas id="canvas" style="display:none;"></canvas>
+
+<script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const resultArea = document.getElementById('result');
+
+    // מילון גיימינג לתרגום תיאורים בלבד
+    const gameLexicon = {
+        "deals": "גורם ל-",
+        "damage": "נזק (DMG)",
+        "cooldown": "זמן טעינה (CD)",
+        "enemies": "אויבים",
+        "allies": "בעלי ברית",
+        "health": "חיים (HP)",
+        "radius": "רדיוס",
+        "duration": "משך זמן",
+        "press": "לחץ על",
+        "hold": "החזק את",
+        "instantly": "מיידית",
+        "nearby": "סמוכים",
+        "ability": "יכולת"
+    };
+
+    // הפעלת מצלמה
+    async function initCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment" } 
+            });
+            video.srcObject = stream;
+        } catch (err) {
+            resultArea.innerHTML = "<p style='color:red;'>שגיאה בגישה למצלמה. יש לוודא שאתה משתמש ב-HTTPS.</p>";
+        }
+    }
+
+    document.getElementById('snap-btn').onclick = () => {
+        resultArea.innerHTML = "<p class='status-msg'>ה-AI מעבד נתונים... המתן</p>";
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        
+        Tesseract.recognize(canvas.toDataURL(), 'eng').then(({ data: { lines } }) => {
+            if (lines.length === 0) {
+                resultArea.innerText = "לא זוהה טקסט. נסה לצלם שוב.";
+                return;
+            }
+            renderGamerText(lines);
+        });
+    };
+
+    function renderGamerText(lines) {
+        let outputHTML = "";
+        
+        lines.forEach((line, i) => {
+            let originalText = line.text.trim();
+            if (originalText.length < 2) return;
+
+            // שורה ראשונה היא בדרך כלל שם היכולת - נשאיר אותה בזהב ובאנגלית
+            if (i === 0) {
+                outputHTML += `<div class="ability-title">${originalText.toUpperCase()}</div>`;
+            } else {
+                // תרגום חכם לתיאור
+                let translatedLine = originalText.toLowerCase();
+                
+                Object.keys(gameLexicon).forEach(word => {
+                    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                    translatedLine = translatedLine.replace(regex, `<span class="keyword">${gameLexicon[word]}</span>`);
+                });
+                
+                outputHTML += `<div class="description">${translatedLine}</div>`;
+            }
+        });
+        
+        resultArea.innerHTML = outputHTML;
+    }
+
+    initCamera();
+</script>
+
+</body>
+</html>
