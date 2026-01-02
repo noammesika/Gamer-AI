@@ -3,163 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GAMER SCREENSHOT Pro - AI</title>
+    <title>GAMER SCREENSHOT - Smart AI</title>
     <script src="https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Assistant:wght@400;700&display=swap');
-        
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Assistant:wght@400;700&display=swap');
         body { margin: 0; font-family: 'Assistant', sans-serif; background: #0a0a0c; color: #e0e0e0; display: flex; flex-direction: column; min-height: 100vh; }
-        header { background: #15151b; padding: 15px; text-align: center; border-bottom: 3px solid #3498db; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
-        h1 { margin: 0; font-family: 'Orbitron', sans-serif; font-size: 22px; color: #3498db; text-shadow: 0 0 15px rgba(52,152,219,0.4); }
+        header { background: #15151b; padding: 15px; text-align: center; border-bottom: 3px solid #00f2ff; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); }
+        h1 { margin: 0; font-family: 'Orbitron', sans-serif; font-size: 20px; color: #00f2ff; text-shadow: 0 0 10px #00f2ff; }
         
-        #preview-container { position: relative; width: 100%; height: 35vh; background: black; border-bottom: 1px solid #333; }
-        video, #image-preview { width: 100%; height: 100%; object-fit: contain; }
-        #image-preview { display: none; }
-        .focus-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 150px; height: 150px; border: 1px solid rgba(52,152,219,0.5); pointer-events: none; }
+        #preview-section { display: flex; overflow-x: auto; gap: 10px; padding: 10px; background: #050505; min-height: 80px; }
+        .preview-box { position: relative; width: 100px; height: 70px; border: 2px solid #333; border-radius: 8px; flex-shrink: 0; }
+        .preview-box img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+        .del-btn { position: absolute; -5px; right: -5px; background: red; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; }
+
+        .cam-container { width: 100%; height: 30vh; background: black; position: relative; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: #00f2ff; box-shadow: 0 0 15px #00f2ff; animation: scan 2s infinite linear; display: none; }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
         .controls { padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #15151b; }
-        button, .custom-upload { background: #2c2c34; color: white; border: 1px solid #444; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; font-family: 'Orbitron', sans-serif; transition: 0.2s; }
-        .upload-btn-wrapper { grid-column: span 1; position: relative; overflow: hidden; }
-        .upload-btn-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%; }
-        
-        .scan-btn { grid-column: span 2; background: linear-gradient(90deg, #3498db, #8e44ad); border: none; font-size: 18px; padding: 15px; }
-        .scan-btn:active { transform: scale(0.98); }
+        button, label { background: #222; color: white; border: 1px solid #444; padding: 15px; border-radius: 12px; font-weight: bold; font-family: 'Orbitron', sans-serif; text-align: center; cursor: pointer; }
+        .btn-add { background: #007bff; border: none; }
+        .btn-scan { grid-column: span 2; background: linear-gradient(45deg, #00f2ff, #7000ff); border: none; font-size: 18px; margin-top: 5px; }
+        .btn-reset { background: #333; color: #ff4444; }
 
-        #result-container { padding: 15px; flex: 1; overflow-y: auto; }
-        .ability-card { background: #1c1c24; border-right: 5px solid #3498db; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-        
-        .ability-name { color: #f1c40f; font-family: 'Orbitron', sans-serif; font-size: 18px; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        .translation-box { color: #fff; font-size: 16px; line-height: 1.6; }
-        .keyword { color: #2ecc71; font-weight: bold; background: rgba(46, 204, 113, 0.1); padding: 0 4px; border-radius: 4px; }
-        
-        .status-bar { text-align: center; font-size: 12px; color: #7f8c8d; margin-bottom: 10px; }
-        .loading-anim { color: #3498db; animation: pulse 1s infinite; font-weight: bold; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        #results { padding: 15px; flex: 1; overflow-y: auto; }
+        .brain-card { background: #1c1c24; border-right: 4px solid #00f2ff; padding: 15px; border-radius: 10px; margin-bottom: 20px; position: relative; overflow: hidden; }
+        .brain-card::before { content: "AI BRAIN RECONSTRUCTION"; position: absolute; top: 2px; left: 5px; font-size: 8px; color: #555; }
+        .orig-text { font-size: 12px; color: #777; margin-bottom: 8px; font-style: italic; }
+        .ai-trans { color: #fff; font-size: 17px; line-height: 1.5; font-weight: 700; }
+        .keyword { color: #00f2ff; text-decoration: underline; }
     </style>
 </head>
 <body>
 
-<header><h1>GAMER SCREENSHOT PRO</h1></header>
+<header><h1>GAMER AI - BRAIN MODE</h1></header>
 
-<div id="preview-container">
-    <video id="video" autoplay playsinline></video>
-    <img id="image-preview" alt="Preview">
-    <div class="focus-overlay"></div>
+<div id="preview-section"></div>
+
+<div class="cam-container">
+    <video id="v" autoplay playsinline></video>
+    <div id="line" class="scan-line"></div>
 </div>
 
 <div class="controls">
-    <button id="reset-cam">מיקוד מחדש</button>
-    <div class="upload-btn-wrapper">
-        <button class="custom-upload">העלאת תמונה</button>
-        <input type="file" id="file-input" accept="image/*">
-    </div>
-    <button class="scan-btn" id="snap">בצע אימות וסריקה</button>
+    <button class="btn-add" id="snap">הוסף צילום (עד 3)</button>
+    <label>העלה תמונה<input type="file" id="f" style="display:none;" accept="image/*"></label>
+    <button class="btn-reset" id="clr">סלק הכל</button>
+    <button onclick="location.reload()">איפוס מצלמה</button>
+    <button class="btn-scan" id="go">הפעל מוח AI וסרוק</button>
 </div>
 
-<div id="result-container">
-    <div class="status-bar" id="status">מערכת מוכנה לסריקת יכולות...</div>
-    <div id="result-list"></div>
-</div>
-
-<canvas id="canvas" style="display:none;"></canvas>
+<div id="results"></div>
+<canvas id="c" style="display:none;"></canvas>
 
 <script>
-    const video = document.getElementById('video');
-    const imagePreview = document.getElementById('image-preview');
-    const fileInput = document.getElementById('file-input');
-    const resultList = document.getElementById('result-list');
-    const status = document.getElementById('status');
-    const canvas = document.getElementById('canvas');
+    const v = document.getElementById('v'), f = document.getElementById('f'), res = document.getElementById('results'), pre = document.getElementById('preview-section'), line = document.getElementById('line'), c = document.getElementById('c'), ctx = c.getContext('2d');
+    let imgs = [];
 
-    const gamerLexicon = {
-        "deals": "גורם ל-", "damage": "נזק (DMG)", "cooldown": "זמן טעינה (CD)",
-        "enemies": "אויבים", "allies": "בעלי ברית", "duration": "משך זמן",
-        "health": "חיים (HP)", "press": "לחץ", "ultimate": "אולטי",
-        "shield": "מגן", "radius": "רדיוס", "passive": "פסיבי"
+    // מילון "מוח" - מתרגם מושגים לפי הקשר
+    const aiBrain = {
+        "damage": "נזק", "cooldown": "זמן טעינה", "health": "חיים", "enemies": "אויבים", "deals": "מוריד", "range": "טווח", "shield": "מגן", "seconds": "שניות", "ultimate": "אולטי"
     };
 
-    // הפעלת מצלמה עם מיקוד אופטימלי
-    async function startCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "environment", focusMode: "continuous" } 
-            });
-            video.srcObject = stream;
-        } catch (err) {
-            status.innerText = "שגיאה במצלמה. נסה להשתמש בהעלאת תמונה.";
-        }
+    navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(s => v.srcObject=s);
+
+    function addImg(src) {
+        if(imgs.length < 3) {
+            imgs.push(src);
+            updatePre();
+        } else { alert("מקסימום 3 תמונות"); }
     }
 
-    document.getElementById('reset-cam').onclick = () => {
-        startCamera();
-        status.innerText = "המצלמה אותחלה למיקוד טוב יותר.";
-    };
-
-    fileInput.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                imagePreview.src = event.target.result;
-                imagePreview.style.display = 'block';
-                video.style.display = 'none';
-                status.innerText = "תמונה הועלתה בהצלחה. לחץ על סריקה.";
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+    function updatePre() {
+        pre.innerHTML = imgs.map((s,i) => `<div class="preview-box"><img src="${s}"><button class="del-btn" onclick="imgs.splice(${i},1);updatePre();">X</button></div>`).join('');
+    }
 
     document.getElementById('snap').onclick = () => {
-        status.innerHTML = '<span class="loading-anim">מבצע אימות נתונים ותרגום...</span>';
-        const ctx = canvas.getContext('2d');
-        
-        let source = video.style.display !== 'none' ? video : imagePreview;
-        canvas.width = source.videoWidth || source.naturalWidth;
-        canvas.height = source.videoHeight || source.naturalHeight;
-        
-        // שלב אימות וסריקה: שיפור התמונה לקריאה חדה
-        ctx.filter = "grayscale(100%) contrast(150%)"; 
-        ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
-        
-        Tesseract.recognize(canvas.toDataURL(), 'eng').then(({ data: { lines } }) => {
-            resultList.innerHTML = ""; // ניקוי תוצאות קודמות
-            
-            if (!lines || lines.length < 1) {
-                status.innerText = "לא זוהה טקסט תקין. נסה להתמקד או להעלות צילום מסך.";
-                return;
-            }
-
-            let currentCard = null;
-
-            lines.forEach((line, i) => {
-                let text = line.text.trim();
-                if (text.length < 3) return;
-
-                // זיהוי שם היכולת (שורה ראשונה או טקסט קצר ומודגש)
-                if (i === 0 || text.toUpperCase() === text) {
-                    currentCard = document.createElement('div');
-                    currentCard.className = 'ability-card';
-                    currentCard.innerHTML = `<div class="ability-name">${text}</div><div class="translation-box"></div>`;
-                    resultList.appendChild(currentCard);
-                } else if (currentCard) {
-                    // תרגום חכם לתיאור
-                    let translatedLine = text.toLowerCase();
-                    Object.keys(gamerLexicon).forEach(word => {
-                        const regex = new RegExp(`\\b${word}\\b`, 'gi');
-                        translatedLine = translatedLine.replace(regex, `<span class="keyword">${gamerLexicon[word]}</span>`);
-                    });
-                    
-                    const box = currentCard.querySelector('.translation-box');
-                    box.innerHTML += `<div>${translatedLine}</div>`;
-                }
-            });
-            
-            status.innerText = "סריקה הושלמה בהצלחה!";
-        });
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        ctx.drawImage(v,0,0);
+        addImg(c.toDataURL('image/jpeg'));
     };
 
-    startCamera();
+    f.onchange = (e) => {
+        const r = new FileReader();
+        r.onload = (ev) => addImg(ev.target.result);
+        r.readAsDataURL(e.target.files[0]);
+    };
+
+    document.getElementById('clr').onclick = () => { imgs = []; updatePre(); res.innerHTML = ""; };
+
+    document.getElementById('go').onclick = async () => {
+        if(imgs.length === 0) return alert("הוסף תמונות קודם");
+        res.innerHTML = "<div style='text-align:center'>ה-AI מעבד נתונים...</div>";
+        line.style.display = "block";
+
+        for(let src of imgs) {
+            const { data: { text } } = await Tesseract.recognize(src, 'eng');
+            
+            // "המוח" - ניקוי ותרגום חכם
+            let cleanLines = text.split('\n').filter(l => l.trim().length > 5);
+            let processedHTML = "";
+
+            cleanLines.forEach(lineText => {
+                let translated = lineText.toLowerCase();
+                // תיקון שגיאות כתיב נפוצות של סורקים
+                translated = translated.replace(/0/g, 'o').replace(/1/g, 'i').replace(/dm9/g, 'dmg');
+                
+                // החלפת מילים מהמוח
+                Object.keys(aiBrain).forEach(key => {
+                    const reg = new RegExp(key, 'gi');
+                    translated = translated.replace(reg, `<span class="keyword">${aiBrain[key]}</span>`);
+                });
+
+                processedHTML += `<div class="ai-trans">${translated}</div>`;
+            });
+
+            const card = document.createElement('div');
+            card.className = 'brain-card';
+            card.innerHTML = `<div class="orig-text">RAW DATA ANALYZED</div>${processedHTML}`;
+            res.appendChild(card);
+        }
+        line.style.display = "none";
+    };
 </script>
 </body>
 </html>
