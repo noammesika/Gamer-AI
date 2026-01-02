@@ -3,34 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GamerAI Chat</title>
+    <title>Gamer AI Chat</title>
     <script src="https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700&display=swap');
-        body { margin: 0; font-family: 'Assistant', sans-serif; background: #121212; color: white; display: flex; flex-direction: column; height: 100vh; }
+        body { margin: 0; font-family: 'Assistant', sans-serif; background: #121212; color: white; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
         /* Header */
-        header { background: #1f1f1f; padding: 15px; text-align: center; border-bottom: 1px solid #333; font-weight: bold; color: #00d4ff; }
+        header { background: #1f1f1f; padding: 15px; text-align: center; border-bottom: 2px solid #00d4ff; font-weight: bold; font-size: 1.2rem; }
 
-        /* Chat Area */
-        #chat-window { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
-        .msg { max-width: 85%; padding: 12px; border-radius: 15px; font-size: 16px; line-height: 1.4; position: relative; }
-        .user-msg { align-self: flex-start; background: #007bff; color: white; border-bottom-right-radius: 2px; }
-        .ai-msg { align-self: flex-end; background: #2c2c2e; border-bottom-left-radius: 2px; border-right: 4px solid #00d4ff; }
-        .msg img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
+        /* Chat Window */
+        #chat-window { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; background: #121212; }
+        .msg { max-width: 85%; padding: 12px; border-radius: 18px; font-size: 16px; line-height: 1.5; position: relative; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .user-msg { align-self: flex-start; background: #007bff; color: white; border-bottom-right-radius: 4px; }
+        .ai-msg { align-self: flex-end; background: #2c2c2e; border-bottom-left-radius: 4px; border-right: 4px solid #00d4ff; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .msg img { max-width: 100%; border-radius: 12px; display: block; margin-bottom: 8px; border: 1px solid #444; }
         
         /* Input Area */
-        .input-area { background: #1f1f1f; padding: 15px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #333; }
-        .icon-btn { background: #333; border: none; color: white; padding: 12px; border-radius: 50%; width: 50px; height: 50px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        .send-btn { background: #00d4ff; color: black; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; flex: 1; }
+        .input-container { background: #1f1f1f; padding: 12px 15px; display: flex; gap: 12px; align-items: center; border-top: 1px solid #333; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+        .action-btn { background: #333; border: none; color: white; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; }
+        .action-btn:active { background: #444; transform: scale(0.9); }
+        .placeholder-text { flex: 1; color: #888; font-size: 15px; }
 
-        /* Camera View */
-        #cam-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100; flex-direction: column; }
-        video { flex: 1; background: black; width: 100%; }
-        .cam-controls { padding: 20px; display: flex; justify-content: space-around; background: #121212; }
+        /* Full Screen Camera Overlay */
+        #cam-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 1000; flex-direction: column; }
+        video { flex: 1; object-fit: cover; }
+        .cam-ui { padding: 30px; display: flex; justify-content: space-around; align-items: center; background: rgba(0,0,0,0.8); }
+        .shutter { width: 70px; height: 70px; background: white; border-radius: 50%; border: 5px solid #444; cursor: pointer; }
 
         .keyword { color: #00d4ff; font-weight: bold; }
-        .loading { font-style: italic; color: #aaa; font-size: 13px; }
+        .ability-name { color: #f1c40f; font-weight: bold; font-size: 1.1rem; display: block; margin-bottom: 5px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -38,24 +42,24 @@
 <header>GAMER AI CHAT</header>
 
 <div id="chat-window">
-    <div class="msg ai-msg">היי נועם! שלח לי צילום מסך של יכולת או צלם אותה, ואני אתרגם לך אותה מיד.</div>
+    <div class="msg ai-msg">היי נועם! אני מוכן. <br>שלח לי צילום מסך של יכולת או צלם אותה, ואני אתרגם הכל בצורה מסודרת.</div>
 </div>
 
 <div id="cam-overlay">
     <video id="v" autoplay playsinline></video>
-    <div class="cam-controls">
-        <button class="icon-btn" onclick="closeCam()">✕</button>
-        <button class="icon-btn" style="background:#fff; color:#000;" onclick="takePhoto()">📸</button>
-    </div>
+    <div class="cam-ui">
+        <button class="action-btn" onclick="closeCam()" style="font-size: 24px;">✕</button>
+        <div class="shutter" onclick="takePhoto()"></div>
+        <div style="width:45px"></div> </div>
 </div>
 
-<div class="input-area">
-    <button class="icon-btn" onclick="openCam()">📷</button>
-    <label class="icon-btn">
+<div class="input-container">
+    <button class="action-btn" onclick="openCam()">📷</button>
+    <label class="action-btn">
         🖼️
         <input type="file" id="f" style="display:none" accept="image/*">
     </label>
-    <div style="flex:1; color:#555; font-size:14px;">בחר תמונה לתרגום...</div>
+    <div class="placeholder-text">שלח תמונה לניתוח...</div>
 </div>
 
 <canvas id="c" style="display:none;"></canvas>
@@ -64,11 +68,17 @@
     const chat = document.getElementById('chat-window'), v = document.getElementById('v'), f = document.getElementById('f'), c = document.getElementById('c'), ctx = c.getContext('2d');
     let stream = null;
 
-    const gamerDict = { "damage": "נזק", "cooldown": "טעינה", "range": "טווח", "enemies": "אויבים", "deals": "גורם", "health": "חיים", "ultimate": "אולטי" };
+    // מילון גיימרים חכם
+    const gamerLexicon = {
+        "damage": "נזק", "cooldown": "זמן טעינה", "range": "טווח", "enemies": "אויבים", 
+        "health": "חיים", "ultimate": "אולטי", "spy": "מרגלת", "neutralize": "לנטרל",
+        "threats": "איומים", "fatal": "קטלני", "elite": "עילית"
+    };
 
-    function addMsg(content, isAi = false, isImg = false) {
+    function addMessage(content, isAi = false, isImg = false) {
         const div = document.createElement('div');
         div.className = `msg ${isAi ? 'ai-msg' : 'user-msg'}`;
+        
         if (isImg) {
             const img = document.createElement('img');
             img.src = content;
@@ -76,19 +86,22 @@
         } else {
             div.innerHTML = content;
         }
+        
         chat.appendChild(div);
         chat.scrollTop = chat.scrollHeight;
         return div;
     }
 
     async function openCam() {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        v.srcObject = stream;
-        document.getElementById('cam-overlay').style.display = 'flex';
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            v.srcObject = stream;
+            document.getElementById('cam-overlay').style.display = 'flex';
+        } catch (e) { alert("שגיאה בגישה למצלמה"); }
     }
 
     function closeCam() {
-        stream.getTracks().forEach(t => t.stop());
+        if(stream) stream.getTracks().forEach(t => t.stop());
         document.getElementById('cam-overlay').style.display = 'none';
     }
 
@@ -107,34 +120,44 @@
     };
 
     async function processImage(src) {
-        addMsg(src, false, true);
-        const aiMsg = addMsg('<span class="loading">ה-AI מנתח את התמונה...</span>', true);
+        addMessage(src, false, true);
+        const aiMsg = addMessage('⏳ ה-AI מנתח את התמונה...', true);
         
-        // שיפור תמונה קליל לפני OCR
-        ctx.filter = "contrast(1.5) grayscale(1)";
+        // שיפור תמונה לפני OCR
         const tempImg = new Image();
         tempImg.src = src;
         await new Promise(r => tempImg.onload = r);
         c.width = tempImg.width; c.height = tempImg.height;
+        ctx.filter = "contrast(1.4) grayscale(1)";
         ctx.drawImage(tempImg, 0, 0);
 
-        const { data: { text } } = await Tesseract.recognize(c.toDataURL(), 'eng');
-        
-        let lines = text.split('\n').filter(l => l.trim().length > 5);
-        if (lines.length === 0) {
-            aiMsg.innerHTML = "מצטער נועם, לא הצלחתי לקרוא את הטקסט. נסה תמונה ברורה יותר.";
-            return;
+        try {
+            const { data: { text } } = await Tesseract.recognize(c.toDataURL(), 'eng');
+            
+            // ניקוי טקסט
+            let lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+            
+            if (lines.length === 0) {
+                aiMsg.innerHTML = "לא הצלחתי לזהות טקסט ברור. נסה לשלוח צילום מסך (Screenshot) במקום צילום מהמצלמה.";
+                return;
+            }
+
+            let translatedLines = lines.map((l, i) => {
+                let clean = l.toLowerCase();
+                Object.keys(gamerLexicon).forEach(k => {
+                    const reg = new RegExp(`\\b${k}\\b`, 'gi');
+                    clean = clean.replace(reg, `<span class="keyword">${gamerLexicon[k]}</span>`);
+                });
+                
+                if (i === 0) return `<span class="ability-name">${l}</span>`;
+                return `• ${clean}`;
+            }).join('<br>');
+
+            aiMsg.innerHTML = `<strong>הנה התרגום שלי:</strong><br><br>${translatedLines}`;
+
+        } catch (err) {
+            aiMsg.innerHTML = "אופס, קרתה שגיאה בניתוח. נסה שוב.";
         }
-
-        let translated = lines.map(l => {
-            let t = l.toLowerCase();
-            Object.keys(gamerDict).forEach(k => {
-                t = t.replace(new RegExp(k, 'gi'), `<span class="keyword">${gamerDict[k]}</span>`);
-            });
-            return t;
-        }).join('<br>');
-
-        aiMsg.innerHTML = `<strong>ניתוח יכולת:</strong><br>${translated}`;
     }
 </script>
 </body>
