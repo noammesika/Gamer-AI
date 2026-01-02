@@ -3,200 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GAMER SCREENSHOT - AI Translator</title>
+    <title>GAMER SCREENSHOT Pro - AI</title>
     <script src="https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Assistant:wght@400;700&display=swap');
         
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0a0c; color: #fff; display: flex; flex-direction: column; height: 100vh; }
+        body { margin: 0; font-family: 'Assistant', sans-serif; background: #0a0a0c; color: #e0e0e0; display: flex; flex-direction: column; min-height: 100vh; }
+        header { background: #15151b; padding: 15px; text-align: center; border-bottom: 3px solid #3498db; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
+        h1 { margin: 0; font-family: 'Orbitron', sans-serif; font-size: 22px; color: #3498db; text-shadow: 0 0 15px rgba(52,152,219,0.4); }
         
-        header { 
-            background: #15151b; 
-            padding: 20px; 
-            text-align: center; 
-            border-bottom: 2px solid #3498db;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
+        #preview-container { position: relative; width: 100%; height: 35vh; background: black; border-bottom: 1px solid #333; }
+        video, #image-preview { width: 100%; height: 100%; object-fit: contain; }
+        #image-preview { display: none; }
+        .focus-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 150px; height: 150px; border: 1px solid rgba(52,152,219,0.5); pointer-events: none; }
 
-        h1 { 
-            margin: 0; 
-            font-family: 'Orbitron', sans-serif; 
-            font-size: 18px; 
-            color: #3498db; 
-            text-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
-            letter-spacing: 1px;
-        }
+        .controls { padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #15151b; }
+        button, .custom-upload { background: #2c2c34; color: white; border: 1px solid #444; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; font-family: 'Orbitron', sans-serif; transition: 0.2s; }
+        .upload-btn-wrapper { grid-column: span 1; position: relative; overflow: hidden; }
+        .upload-btn-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%; }
+        
+        .scan-btn { grid-column: span 2; background: linear-gradient(90deg, #3498db, #8e44ad); border: none; font-size: 18px; padding: 15px; }
+        .scan-btn:active { transform: scale(0.98); }
 
-        #camera-view { 
-            position: relative; 
-            flex: 1; 
-            background: #000; 
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        video { width: 100%; height: 100%; object-fit: cover; }
-
-        .scan-line {
-            position: absolute;
-            width: 100%;
-            height: 3px;
-            background: linear-gradient(to right, transparent, #3498db, transparent);
-            box-shadow: 0 0 15px #3498db;
-            top: 0;
-            animation: scanning 3s infinite linear;
-            z-index: 2;
-        }
-
-        @keyframes scanning {
-            0% { top: 0; }
-            100% { top: 100%; }
-        }
-
-        #output-panel { 
-            padding: 20px; 
-            background: #15151b; 
-            border-top: 2px solid #222;
-            border-radius: 25px 25px 0 0;
-            z-index: 5;
-        }
-
-        button { 
-            background: linear-gradient(90deg, #3498db, #2980b9); 
-            color: white; 
-            border: none; 
-            padding: 18px; 
-            border-radius: 15px; 
-            font-size: 18px; 
-            font-weight: bold; 
-            width: 100%; 
-            cursor: pointer;
-            font-family: 'Orbitron', sans-serif;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: 0.2s;
-        }
-
-        button:active { transform: scale(0.98); opacity: 0.9; }
-
-        #result { 
-            margin-top: 15px; 
-            background: #0a0a0c; 
-            padding: 15px; 
-            border-radius: 12px; 
-            font-size: 15px; 
-            line-height: 1.6; 
-            min-height: 80px; 
-            max-height: 150px;
-            overflow-y: auto;
-            border-right: 4px solid #3498db;
-        }
-
-        .ability-title { color: #f1c40f; font-weight: bold; font-size: 17px; margin-bottom: 5px; }
-        .description { color: #ccc; }
-        .keyword { color: #2ecc71; font-weight: bold; }
-        .status-msg { color: #3498db; font-style: italic; text-align: center; }
+        #result-container { padding: 15px; flex: 1; overflow-y: auto; }
+        .ability-card { background: #1c1c24; border-right: 5px solid #3498db; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        
+        .ability-name { color: #f1c40f; font-family: 'Orbitron', sans-serif; font-size: 18px; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .translation-box { color: #fff; font-size: 16px; line-height: 1.6; }
+        .keyword { color: #2ecc71; font-weight: bold; background: rgba(46, 204, 113, 0.1); padding: 0 4px; border-radius: 4px; }
+        
+        .status-bar { text-align: center; font-size: 12px; color: #7f8c8d; margin-bottom: 10px; }
+        .loading-anim { color: #3498db; animation: pulse 1s infinite; font-weight: bold; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>GAMER SCREENSHOT</h1>
-</header>
+<header><h1>GAMER SCREENSHOT PRO</h1></header>
 
-<div id="camera-view">
+<div id="preview-container">
     <video id="video" autoplay playsinline></video>
-    <div class="scan-line"></div>
+    <img id="image-preview" alt="Preview">
+    <div class="focus-overlay"></div>
 </div>
 
-<div id="output-panel">
-    <button id="snap-btn">סרוק יכולת (SCAN)</button>
-    <div id="result">
-        <p class="status-msg">כוון את המצלמה לטקסט ולחץ על הכפתור</p>
+<div class="controls">
+    <button id="reset-cam">מיקוד מחדש</button>
+    <div class="upload-btn-wrapper">
+        <button class="custom-upload">העלאת תמונה</button>
+        <input type="file" id="file-input" accept="image/*">
     </div>
+    <button class="scan-btn" id="snap">בצע אימות וסריקה</button>
+</div>
+
+<div id="result-container">
+    <div class="status-bar" id="status">מערכת מוכנה לסריקת יכולות...</div>
+    <div id="result-list"></div>
 </div>
 
 <canvas id="canvas" style="display:none;"></canvas>
 
 <script>
     const video = document.getElementById('video');
+    const imagePreview = document.getElementById('image-preview');
+    const fileInput = document.getElementById('file-input');
+    const resultList = document.getElementById('result-list');
+    const status = document.getElementById('status');
     const canvas = document.getElementById('canvas');
-    const resultArea = document.getElementById('result');
 
-    // מילון גיימינג לתרגום תיאורים בלבד
-    const gameLexicon = {
-        "deals": "גורם ל-",
-        "damage": "נזק (DMG)",
-        "cooldown": "זמן טעינה (CD)",
-        "enemies": "אויבים",
-        "allies": "בעלי ברית",
-        "health": "חיים (HP)",
-        "radius": "רדיוס",
-        "duration": "משך זמן",
-        "press": "לחץ על",
-        "hold": "החזק את",
-        "instantly": "מיידית",
-        "nearby": "סמוכים",
-        "ability": "יכולת"
+    const gamerLexicon = {
+        "deals": "גורם ל-", "damage": "נזק (DMG)", "cooldown": "זמן טעינה (CD)",
+        "enemies": "אויבים", "allies": "בעלי ברית", "duration": "משך זמן",
+        "health": "חיים (HP)", "press": "לחץ", "ultimate": "אולטי",
+        "shield": "מגן", "radius": "רדיוס", "passive": "פסיבי"
     };
 
-    // הפעלת מצלמה
-    async function initCamera() {
+    // הפעלת מצלמה עם מיקוד אופטימלי
+    async function startCamera() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "environment" } 
+                video: { facingMode: "environment", focusMode: "continuous" } 
             });
             video.srcObject = stream;
         } catch (err) {
-            resultArea.innerHTML = "<p style='color:red;'>שגיאה בגישה למצלמה. יש לוודא שאתה משתמש ב-HTTPS.</p>";
+            status.innerText = "שגיאה במצלמה. נסה להשתמש בהעלאת תמונה.";
         }
     }
 
-    document.getElementById('snap-btn').onclick = () => {
-        resultArea.innerHTML = "<p class='status-msg'>ה-AI מעבד נתונים... המתן</p>";
+    document.getElementById('reset-cam').onclick = () => {
+        startCamera();
+        status.innerText = "המצלמה אותחלה למיקוד טוב יותר.";
+    };
+
+    fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                imagePreview.src = event.target.result;
+                imagePreview.style.display = 'block';
+                video.style.display = 'none';
+                status.innerText = "תמונה הועלתה בהצלחה. לחץ על סריקה.";
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    document.getElementById('snap').onclick = () => {
+        status.innerHTML = '<span class="loading-anim">מבצע אימות נתונים ותרגום...</span>';
+        const ctx = canvas.getContext('2d');
         
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
+        let source = video.style.display !== 'none' ? video : imagePreview;
+        canvas.width = source.videoWidth || source.naturalWidth;
+        canvas.height = source.videoHeight || source.naturalHeight;
+        
+        // שלב אימות וסריקה: שיפור התמונה לקריאה חדה
+        ctx.filter = "grayscale(100%) contrast(150%)"; 
+        ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
         
         Tesseract.recognize(canvas.toDataURL(), 'eng').then(({ data: { lines } }) => {
-            if (lines.length === 0) {
-                resultArea.innerText = "לא זוהה טקסט. נסה לצלם שוב.";
+            resultList.innerHTML = ""; // ניקוי תוצאות קודמות
+            
+            if (!lines || lines.length < 1) {
+                status.innerText = "לא זוהה טקסט תקין. נסה להתמקד או להעלות צילום מסך.";
                 return;
             }
-            renderGamerText(lines);
+
+            let currentCard = null;
+
+            lines.forEach((line, i) => {
+                let text = line.text.trim();
+                if (text.length < 3) return;
+
+                // זיהוי שם היכולת (שורה ראשונה או טקסט קצר ומודגש)
+                if (i === 0 || text.toUpperCase() === text) {
+                    currentCard = document.createElement('div');
+                    currentCard.className = 'ability-card';
+                    currentCard.innerHTML = `<div class="ability-name">${text}</div><div class="translation-box"></div>`;
+                    resultList.appendChild(currentCard);
+                } else if (currentCard) {
+                    // תרגום חכם לתיאור
+                    let translatedLine = text.toLowerCase();
+                    Object.keys(gamerLexicon).forEach(word => {
+                        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                        translatedLine = translatedLine.replace(regex, `<span class="keyword">${gamerLexicon[word]}</span>`);
+                    });
+                    
+                    const box = currentCard.querySelector('.translation-box');
+                    box.innerHTML += `<div>${translatedLine}</div>`;
+                }
+            });
+            
+            status.innerText = "סריקה הושלמה בהצלחה!";
         });
     };
 
-    function renderGamerText(lines) {
-        let outputHTML = "";
-        
-        lines.forEach((line, i) => {
-            let originalText = line.text.trim();
-            if (originalText.length < 2) return;
-
-            // שורה ראשונה היא בדרך כלל שם היכולת - נשאיר אותה בזהב ובאנגלית
-            if (i === 0) {
-                outputHTML += `<div class="ability-title">${originalText.toUpperCase()}</div>`;
-            } else {
-                // תרגום חכם לתיאור
-                let translatedLine = originalText.toLowerCase();
-                
-                Object.keys(gameLexicon).forEach(word => {
-                    const regex = new RegExp(`\\b${word}\\b`, 'gi');
-                    translatedLine = translatedLine.replace(regex, `<span class="keyword">${gameLexicon[word]}</span>`);
-                });
-                
-                outputHTML += `<div class="description">${translatedLine}</div>`;
-            }
-        });
-        
-        resultArea.innerHTML = outputHTML;
-    }
-
-    initCamera();
+    startCamera();
 </script>
-
 </body>
 </html>
