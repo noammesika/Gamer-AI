@@ -3,129 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GAMER SCREENSHOT - Smart AI</title>
+    <title>GamerAI Chat</title>
     <script src="https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Assistant:wght@400;700&display=swap');
-        body { margin: 0; font-family: 'Assistant', sans-serif; background: #0a0a0c; color: #e0e0e0; display: flex; flex-direction: column; min-height: 100vh; }
-        header { background: #15151b; padding: 15px; text-align: center; border-bottom: 3px solid #00f2ff; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); }
-        h1 { margin: 0; font-family: 'Orbitron', sans-serif; font-size: 20px; color: #00f2ff; text-shadow: 0 0 10px #00f2ff; }
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700&display=swap');
+        body { margin: 0; font-family: 'Assistant', sans-serif; background: #121212; color: white; display: flex; flex-direction: column; height: 100vh; }
         
-        #preview-section { display: flex; overflow-x: auto; gap: 10px; padding: 10px; background: #050505; min-height: 80px; }
-        .preview-box { position: relative; width: 100px; height: 70px; border: 2px solid #333; border-radius: 8px; flex-shrink: 0; }
-        .preview-box img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
-        .del-btn { position: absolute; -5px; right: -5px; background: red; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; }
+        /* Header */
+        header { background: #1f1f1f; padding: 15px; text-align: center; border-bottom: 1px solid #333; font-weight: bold; color: #00d4ff; }
 
-        .cam-container { width: 100%; height: 30vh; background: black; position: relative; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: #00f2ff; box-shadow: 0 0 15px #00f2ff; animation: scan 2s infinite linear; display: none; }
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        /* Chat Area */
+        #chat-window { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+        .msg { max-width: 85%; padding: 12px; border-radius: 15px; font-size: 16px; line-height: 1.4; position: relative; }
+        .user-msg { align-self: flex-start; background: #007bff; color: white; border-bottom-right-radius: 2px; }
+        .ai-msg { align-self: flex-end; background: #2c2c2e; border-bottom-left-radius: 2px; border-right: 4px solid #00d4ff; }
+        .msg img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
+        
+        /* Input Area */
+        .input-area { background: #1f1f1f; padding: 15px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #333; }
+        .icon-btn { background: #333; border: none; color: white; padding: 12px; border-radius: 50%; width: 50px; height: 50px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .send-btn { background: #00d4ff; color: black; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; flex: 1; }
 
-        .controls { padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #15151b; }
-        button, label { background: #222; color: white; border: 1px solid #444; padding: 15px; border-radius: 12px; font-weight: bold; font-family: 'Orbitron', sans-serif; text-align: center; cursor: pointer; }
-        .btn-add { background: #007bff; border: none; }
-        .btn-scan { grid-column: span 2; background: linear-gradient(45deg, #00f2ff, #7000ff); border: none; font-size: 18px; margin-top: 5px; }
-        .btn-reset { background: #333; color: #ff4444; }
+        /* Camera View */
+        #cam-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100; flex-direction: column; }
+        video { flex: 1; background: black; width: 100%; }
+        .cam-controls { padding: 20px; display: flex; justify-content: space-around; background: #121212; }
 
-        #results { padding: 15px; flex: 1; overflow-y: auto; }
-        .brain-card { background: #1c1c24; border-right: 4px solid #00f2ff; padding: 15px; border-radius: 10px; margin-bottom: 20px; position: relative; overflow: hidden; }
-        .brain-card::before { content: "AI BRAIN RECONSTRUCTION"; position: absolute; top: 2px; left: 5px; font-size: 8px; color: #555; }
-        .orig-text { font-size: 12px; color: #777; margin-bottom: 8px; font-style: italic; }
-        .ai-trans { color: #fff; font-size: 17px; line-height: 1.5; font-weight: 700; }
-        .keyword { color: #00f2ff; text-decoration: underline; }
+        .keyword { color: #00d4ff; font-weight: bold; }
+        .loading { font-style: italic; color: #aaa; font-size: 13px; }
     </style>
 </head>
 <body>
 
-<header><h1>GAMER AI - BRAIN MODE</h1></header>
+<header>GAMER AI CHAT</header>
 
-<div id="preview-section"></div>
+<div id="chat-window">
+    <div class="msg ai-msg">היי נועם! שלח לי צילום מסך של יכולת או צלם אותה, ואני אתרגם לך אותה מיד.</div>
+</div>
 
-<div class="cam-container">
+<div id="cam-overlay">
     <video id="v" autoplay playsinline></video>
-    <div id="line" class="scan-line"></div>
+    <div class="cam-controls">
+        <button class="icon-btn" onclick="closeCam()">✕</button>
+        <button class="icon-btn" style="background:#fff; color:#000;" onclick="takePhoto()">📸</button>
+    </div>
 </div>
 
-<div class="controls">
-    <button class="btn-add" id="snap">הוסף צילום (עד 3)</button>
-    <label>העלה תמונה<input type="file" id="f" style="display:none;" accept="image/*"></label>
-    <button class="btn-reset" id="clr">סלק הכל</button>
-    <button onclick="location.reload()">איפוס מצלמה</button>
-    <button class="btn-scan" id="go">הפעל מוח AI וסרוק</button>
+<div class="input-area">
+    <button class="icon-btn" onclick="openCam()">📷</button>
+    <label class="icon-btn">
+        🖼️
+        <input type="file" id="f" style="display:none" accept="image/*">
+    </label>
+    <div style="flex:1; color:#555; font-size:14px;">בחר תמונה לתרגום...</div>
 </div>
 
-<div id="results"></div>
 <canvas id="c" style="display:none;"></canvas>
 
 <script>
-    const v = document.getElementById('v'), f = document.getElementById('f'), res = document.getElementById('results'), pre = document.getElementById('preview-section'), line = document.getElementById('line'), c = document.getElementById('c'), ctx = c.getContext('2d');
-    let imgs = [];
+    const chat = document.getElementById('chat-window'), v = document.getElementById('v'), f = document.getElementById('f'), c = document.getElementById('c'), ctx = c.getContext('2d');
+    let stream = null;
 
-    // מילון "מוח" - מתרגם מושגים לפי הקשר
-    const aiBrain = {
-        "damage": "נזק", "cooldown": "זמן טעינה", "health": "חיים", "enemies": "אויבים", "deals": "מוריד", "range": "טווח", "shield": "מגן", "seconds": "שניות", "ultimate": "אולטי"
-    };
+    const gamerDict = { "damage": "נזק", "cooldown": "טעינה", "range": "טווח", "enemies": "אויבים", "deals": "גורם", "health": "חיים", "ultimate": "אולטי" };
 
-    navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(s => v.srcObject=s);
-
-    function addImg(src) {
-        if(imgs.length < 3) {
-            imgs.push(src);
-            updatePre();
-        } else { alert("מקסימום 3 תמונות"); }
+    function addMsg(content, isAi = false, isImg = false) {
+        const div = document.createElement('div');
+        div.className = `msg ${isAi ? 'ai-msg' : 'user-msg'}`;
+        if (isImg) {
+            const img = document.createElement('img');
+            img.src = content;
+            div.appendChild(img);
+        } else {
+            div.innerHTML = content;
+        }
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+        return div;
     }
 
-    function updatePre() {
-        pre.innerHTML = imgs.map((s,i) => `<div class="preview-box"><img src="${s}"><button class="del-btn" onclick="imgs.splice(${i},1);updatePre();">X</button></div>`).join('');
+    async function openCam() {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        v.srcObject = stream;
+        document.getElementById('cam-overlay').style.display = 'flex';
     }
 
-    document.getElementById('snap').onclick = () => {
+    function closeCam() {
+        stream.getTracks().forEach(t => t.stop());
+        document.getElementById('cam-overlay').style.display = 'none';
+    }
+
+    function takePhoto() {
         c.width = v.videoWidth; c.height = v.videoHeight;
-        ctx.drawImage(v,0,0);
-        addImg(c.toDataURL('image/jpeg'));
-    };
+        ctx.drawImage(v, 0, 0);
+        const data = c.toDataURL('image/jpeg');
+        closeCam();
+        processImage(data);
+    }
 
     f.onchange = (e) => {
-        const r = new FileReader();
-        r.onload = (ev) => addImg(ev.target.result);
-        r.readAsDataURL(e.target.files[0]);
+        const reader = new FileReader();
+        reader.onload = (ev) => processImage(ev.target.result);
+        reader.readAsDataURL(e.target.files[0]);
     };
 
-    document.getElementById('clr').onclick = () => { imgs = []; updatePre(); res.innerHTML = ""; };
+    async function processImage(src) {
+        addMsg(src, false, true);
+        const aiMsg = addMsg('<span class="loading">ה-AI מנתח את התמונה...</span>', true);
+        
+        // שיפור תמונה קליל לפני OCR
+        ctx.filter = "contrast(1.5) grayscale(1)";
+        const tempImg = new Image();
+        tempImg.src = src;
+        await new Promise(r => tempImg.onload = r);
+        c.width = tempImg.width; c.height = tempImg.height;
+        ctx.drawImage(tempImg, 0, 0);
 
-    document.getElementById('go').onclick = async () => {
-        if(imgs.length === 0) return alert("הוסף תמונות קודם");
-        res.innerHTML = "<div style='text-align:center'>ה-AI מעבד נתונים...</div>";
-        line.style.display = "block";
-
-        for(let src of imgs) {
-            const { data: { text } } = await Tesseract.recognize(src, 'eng');
-            
-            // "המוח" - ניקוי ותרגום חכם
-            let cleanLines = text.split('\n').filter(l => l.trim().length > 5);
-            let processedHTML = "";
-
-            cleanLines.forEach(lineText => {
-                let translated = lineText.toLowerCase();
-                // תיקון שגיאות כתיב נפוצות של סורקים
-                translated = translated.replace(/0/g, 'o').replace(/1/g, 'i').replace(/dm9/g, 'dmg');
-                
-                // החלפת מילים מהמוח
-                Object.keys(aiBrain).forEach(key => {
-                    const reg = new RegExp(key, 'gi');
-                    translated = translated.replace(reg, `<span class="keyword">${aiBrain[key]}</span>`);
-                });
-
-                processedHTML += `<div class="ai-trans">${translated}</div>`;
-            });
-
-            const card = document.createElement('div');
-            card.className = 'brain-card';
-            card.innerHTML = `<div class="orig-text">RAW DATA ANALYZED</div>${processedHTML}`;
-            res.appendChild(card);
+        const { data: { text } } = await Tesseract.recognize(c.toDataURL(), 'eng');
+        
+        let lines = text.split('\n').filter(l => l.trim().length > 5);
+        if (lines.length === 0) {
+            aiMsg.innerHTML = "מצטער נועם, לא הצלחתי לקרוא את הטקסט. נסה תמונה ברורה יותר.";
+            return;
         }
-        line.style.display = "none";
-    };
+
+        let translated = lines.map(l => {
+            let t = l.toLowerCase();
+            Object.keys(gamerDict).forEach(k => {
+                t = t.replace(new RegExp(k, 'gi'), `<span class="keyword">${gamerDict[k]}</span>`);
+            });
+            return t;
+        }).join('<br>');
+
+        aiMsg.innerHTML = `<strong>ניתוח יכולת:</strong><br>${translated}`;
+    }
 </script>
 </body>
 </html>
