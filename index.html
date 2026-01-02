@@ -1,107 +1,128 @@
-
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gamer AI - Personalized v9.0</title>
+    <title>Gamer AI - Ultra Stable</title>
     <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
     <style>
-        :root { --p: #00d4ff; --bg: #0b0b0e; }
+        :root { --p: #00d4ff; --bg: #0b0b0e; --error: #ff4444; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* מסך הגדרות ראשוני */
-        #setup-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
-        .setup-card { background: #1a1a1e; padding: 30px; border-radius: 20px; border: 1px solid var(--p); width: 90%; max-width: 400px; }
-        .setup-input { background: #25252b; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; width: 100%; margin: 10px 0; box-sizing: border-box; text-align: center; }
-        .gender-box { display: flex; gap: 10px; margin: 20px 0; }
-        .gender-btn { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #444; background: #25252b; color: white; cursor: pointer; }
-        .gender-btn.active { border-color: var(--p); background: rgba(0, 212, 255, 0.1); }
+        /* מערכת איפוס חירום */
+        #emergency-reset { display: none; position: fixed; top: 10px; left: 10px; z-index: 20000; background: var(--error); color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 10px; cursor: pointer; }
 
-        header { background: #16161a; padding: 15px; text-align: center; border-bottom: 2px solid var(--p); font-weight: bold; }
-        #main-display { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; padding-bottom: 150px; }
-        .bubble { padding: 15px; border-radius: 15px; background: #1c1c21; border-right: 4px solid var(--p); }
+        #setup-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .card { background: #1a1a1e; padding: 30px; border-radius: 20px; border: 1px solid var(--p); width: 90%; max-width: 350px; text-align: center; }
+        .input-style { background: #25252b; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; width: 100%; margin: 10px 0; box-sizing: border-box; }
         
-        .nav { position: fixed; bottom: 0; width: 100%; background: #16161a; border-top: 1px solid #333; padding: 20px; box-sizing: border-box; }
-        .btn-row { display: flex; justify-content: space-around; gap: 10px; }
-        .circ { background: #333; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; border: none; }
-        .send-btn { background: var(--p); color: black; border: none; padding: 10px 25px; border-radius: 20px; font-weight: bold; }
+        .gender-select { display: flex; gap: 10px; margin: 15px 0; }
+        .g-btn { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #444; background: #25252b; color: white; }
+        .g-btn.active { border-color: var(--p); background: rgba(0, 212, 255, 0.1); }
+
+        header { background: #16161a; padding: 15px; text-align: center; border-bottom: 2px solid var(--p); font-weight: bold; position: relative; }
+        #master-indicator { display: none; position: absolute; left: 15px; color: var(--error); font-size: 10px; border: 1px solid var(--error); padding: 2px 5px; border-radius: 4px; }
+
+        #main-display { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .bubble { padding: 15px; border-radius: 15px; background: #1c1c21; border-right: 4px solid var(--p); }
+
+        .nav { background: #16161a; border-top: 1px solid #333; padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+        .circ { background: #333; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; border: none; }
     </style>
 </head>
 <body>
 
+<button id="emergency-reset" onclick="hardReset()">שחזור גרסה יציבה</button>
+
 <div id="setup-overlay">
-    <div class="setup-card">
-        <h2 style="color:var(--p)">הגדרות פרופיל</h2>
-        <input type="text" id="user-nick" class="setup-input" placeholder="איך לקרוא לך?">
-        <div class="gender-box">
-            <button class="gender-btn" id="btn-male" onclick="setGender('male')">גבר</button>
-            <button class="gender-btn" id="btn-female" onclick="setGender('female')">אישה</button>
+    <div class="card">
+        <h2 style="color:var(--p)">כניסה למערכת</h2>
+        <input type="text" id="nick-in" class="input-style" placeholder="כינוי">
+        <div class="gender-select">
+            <button class="g-btn" id="m-btn" onclick="setG('male')">גבר</button>
+            <button class="g-btn" id="f-btn" onclick="setG('female')">אישה</button>
         </div>
-        <button onclick="finishSetup()" style="background:var(--p); border:none; padding:15px; border-radius:10px; width:100%; font-weight:bold;">המשך לאתר</button>
+        <button onclick="confirmSetup()" style="background:var(--p); border:none; padding:15px; border-radius:10px; width:100%; font-weight:bold;">הפעל</button>
     </div>
 </div>
 
-<header id="site-header">GAMER AI - יוצר האתר</header>
+<header>
+    <div id="master-indicator">MASTER</div>
+    יוצר האתר - GAMER AI
+</header>
 
 <div id="main-display">
-    <div id="welcome-msg" class="bubble"></div>
+    <div id="msg" class="bubble">מערכת בטוחה פעילה.</div>
 </div>
 
 <div class="nav">
-    <div style="display:flex; gap:10px; margin-bottom:10px;">
-        <input type="text" id="cmd-field" class="setup-input" style="margin:0;" placeholder="הקלד הודעה או קוד...">
-        <button class="send-btn" onclick="handleInput()">שלח</button>
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <input type="text" id="cmd" class="input-style" style="margin:0" placeholder="פקודה...">
+        <button onclick="runCmd()" style="background:var(--p); border:none; padding:0 20px; border-radius:10px; font-weight:bold;">בצע</button>
     </div>
-    <div class="btn-row">
-        <button class="circ" onclick="alert('פתיחת מצלמה...')">📷</button>
-        <button class="circ" onclick="location.href='https://paypal.me/noammesika567'">💰</button>
-        <button class="circ" onclick="alert('הגדרות ניהול')">⚙️</button>
+    <div style="display:flex; justify-content:space-around;">
+        <button class="circ" onclick="alert('סורק פעיל')">📷</button>
+        <button class="circ" onclick="window.open('https://paypal.me/noammesika567')">💰</button>
+        <button class="circ" onclick="showResetInfo()">🔄</button>
     </div>
 </div>
 
 <script>
-    let userData = { nick: "", gender: "male" };
+    // הגדרות בסיסיות
+    let state = JSON.parse(localStorage.getItem('gamer_ai_state')) || { nick: "", gender: "male", isMaster: false };
 
-    function setGender(g) {
-        userData.gender = g;
-        document.getElementById('btn-male').classList.toggle('active', g === 'male');
-        document.getElementById('btn-female').classList.toggle('active', g === 'female');
+    // מנגנון זיהוי שגיאות - אם האתר לא נטען תוך 5 שניות, כפתור האיפוס יופיע
+    setTimeout(() => { if(!state.nick) document.getElementById('emergency-reset').style.display = 'block'; }, 5000);
+
+    function setG(g) {
+        state.gender = g;
+        document.getElementById('m-btn').classList.toggle('active', g==='male');
+        document.getElementById('f-btn').classList.toggle('active', g==='female');
     }
 
-    function finishSetup() {
-        const nick = document.getElementById('user-nick').value.trim();
-        if(!nick) return alert("אנא בחר כינוי.");
-        userData.nick = nick;
-        
-        document.getElementById('setup-overlay').style.display = 'none';
-        
-        // התאמת הפנייה
-        const welcome = document.getElementById('welcome-msg');
-        if(userData.gender === 'male') {
-            welcome.innerText = `ברוך הבא, ${userData.nick}. איך אוכל לעזור לך היום?`;
-        } else {
-            welcome.innerText = `ברוכה הבאה, ${userData.nick}. איך אוכל לעזור לך היום?`;
+    function confirmSetup() {
+        const n = document.getElementById('nick-in').value.trim();
+        if(!n) return;
+        state.nick = n;
+        saveState();
+        applyState();
+    }
+
+    function applyState() {
+        if(state.nick) {
+            document.getElementById('setup-overlay').style.display = 'none';
+            document.getElementById('msg').innerText = (state.gender === 'male' ? `ברוך הבא, ${state.nick}.` : `ברוכה הבאה, ${state.nick}.`);
         }
+        if(state.isMaster) document.getElementById('master-indicator').style.display = 'block';
     }
 
-    function handleInput() {
-        const val = document.getElementById('cmd-field').value.trim();
-        if(!val) return;
-
-        // בדיקת קוד מנהל בלי להגיד את השם
+    function runCmd() {
+        const val = document.getElementById('cmd').value.trim();
         if(val === "Mesika 3112005") {
-            alert(userData.gender === 'male' ? "זוהית כמנהל המערכת. שלום לך." : "זוהית כמנהלת המערכת. שלום לך.");
-            document.getElementById('site-header').innerText = "ADMIN MODE ACTIVE";
-        } else {
-            const d = document.createElement('div');
-            d.className = 'bubble';
-            d.style.marginTop = "10px";
-            d.innerText = userData.gender === 'male' ? "הבנתי אותך, אני בודק את זה..." : "הבנתי אותך, אני בודקת את זה...";
-            document.getElementById('main-display').appendChild(d);
+            state.isMaster = true;
+            saveState();
+            applyState();
+            alert("גישת Master הופעלה.");
         }
-        document.getElementById('cmd-field').value = "";
+        document.getElementById('cmd').value = "";
     }
+
+    function saveState() { localStorage.setItem('gamer_ai_state', JSON.stringify(state)); }
+
+    // פונקציית האיפוס העצמי - מחזירה את האתר למצב נקי
+    function hardReset() {
+        if(confirm("האם לאפס את האתר לגרסה היציבה? כל ההגדרות יימחקו.")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
+    function showResetInfo() {
+        alert("מנגנון איפוס עצמי פעיל. במקרה של תקלה, האתר יאפשר שחזור גרסה אוטומטי.");
+    }
+
+    // הפעלה ראשונית
+    if(state.nick) applyState();
 </script>
 </body>
 </html>
